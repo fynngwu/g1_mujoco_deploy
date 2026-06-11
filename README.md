@@ -20,7 +20,7 @@ English | [中文](README_zh.md)
 - System packages:
 
   ```bash
-  sudo apt install libeigen3-dev nlohmann-json3-dev libboost-all-dev libssl-dev
+  sudo apt install tmux libeigen3-dev nlohmann-json3-dev libboost-all-dev libssl-dev
   ```
 
 ## Quick Start

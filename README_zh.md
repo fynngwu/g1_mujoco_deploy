@@ -20,7 +20,7 @@
 - 系统依赖：
 
   ```bash
-  sudo apt install libeigen3-dev nlohmann-json3-dev libboost-all-dev libssl-dev
+  sudo apt install tmux libeigen3-dev nlohmann-json3-dev libboost-all-dev libssl-dev
   ```
 
 ## 快速开始
