@@ -5,6 +5,7 @@ cmake-build-*/
 # Compiled Object files
 *.o
 *.obj
+*.tgz
 
 # Compiled Dynamic libraries
 *.so
