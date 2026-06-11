@@ -1,0 +1,11 @@
+[project]
+name = "virtual-keyboard"
+version = "1.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pygame",
+    "unitree-sdk2py",
+]
+
+[tool.uv.sources]
+unitree-sdk2py = { path = "../unitree_mujoco/unitree_sdk2_python" }

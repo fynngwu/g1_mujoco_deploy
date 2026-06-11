@@ -16,176 +16,109 @@ English | [中文](README_zh.md)
 - CMake >= 3.14
 - C++17 compiler
 - CUDA
-- Required libraries:
-  - unitree_sdk2
-  - **ONNX Runtime 1.22.0** (see installation below)
-  - Eigen3
-  - nlohmann_json >= 3.7.3
-  - Boost
+- [uv](https://docs.astral.sh/uv/) (for Python virtual keyboard — `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- System packages:
 
-### Installing ONNX Runtime
+  ```bash
+  sudo apt install libeigen3-dev nlohmann-json3-dev libboost-all-dev libssl-dev
+  ```
 
-Download and extract ONNX Runtime 1.22.0 to the `controller/` directory:
+## Quick Start
 
-**For x64 (Simulation):**
-```bash
-cd controller/
-wget https://github.com/microsoft/onnxruntime/releases/download/v1.22.0/onnxruntime-linux-x64-1.22.0.tgz
-tar -xzf onnxruntime-linux-x64-1.22.0.tgz
-```
-
-**For aarch64 (Real Robot):**
-```bash
-cd controller/
-wget https://github.com/microsoft/onnxruntime/releases/download/v1.22.0/onnxruntime-linux-aarch64-1.22.0.tgz
-tar -xzf onnxruntime-linux-aarch64-1.22.0.tgz
-```
-
-## Building
+### 1. Build Everything
 
 ```bash
-mkdir -p build
-cd build
-cmake ..
-make -j4
+./build.sh
 ```
+
+`build.sh` automatically:
+- Installs `unitree_sdk2` to `/opt/unitree_robotics` (if not present)
+- Downloads and extracts **ONNX Runtime 1.22.0** (if not present)
+- Downloads and extracts **MuJoCo 3.3.6** (if not present)
+- Sets up Python virtual env via `uv sync` for the virtual keyboard
+- Builds `unitree_mujoco` simulator and `wbc_fsm` controller
+
+### 2. Run
+
+```bash
+./start.sh    # starts simulator + virtual keyboard + controller in tmux
+```
+
+### 3. Stop
+
+```bash
+./stop.sh     # kills all processes and tmux session
+```
+
+## Usage Workflow
+
+After `./start.sh`, three windows appear: MuJoCo viewer, Virtual Controller GUI, and the FSM terminal.
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Click **Stand** in Virtual Controller GUI | Robot enters position-hold mode |
+| 2 | Click **Walk** | Robot switches to Loco locomotion mode |
+| 3 | Focus MuJoCo viewer, press **9** | Suspension band releases |
+| 4 | Use joystick pads or WASD/arrows | Robot moves |
+
+> The Virtual Controller GUI simulates an Xbox controller — click buttons and drag joystick pads with the mouse. Keyboard shortcuts: WASD = move, QEZX = turn.
+
+**Note:** The **Dance** and **Gangnam** buttons are placeholders and have no effect.
+
+All control is done through the Virtual Controller GUI (mouse or keyboard). No physical gamepad required.
 
 ## Configuration
 
-Configuration files are located in `config/`:
-- `wbc.json`: WBC state configuration
-- `loco.json`: Locomotion state configuration
-- `fixedpose.json`: FixedStand state configuration
-- `passive.json`: Passive state configuration
+### MJAMP Model
 
-Example configuration (`wbc.json`):
+Place new ONNX model files in `model/loco/`, then edit `config/mjamp.json`:
+
 ```json
 {
-    "model_path": "model/wbc/lafan1_0128_1.onnx",
-    "folder_path": "motion_data/lafan1/dance12_binary",
-    "enter_idx": 0,
-    "pause_idx": 350,
-    "safe_projgravity_threshold": 0.5
+    "model_path": "model/loco/your_model.onnx",
+    "safe_projgravity_threshold": 2.6,
+    "vx_limit_min": -0.8,
+    "vx_limit_max": 1.0,
+    "vy_limit_min": -1.0,
+    "vy_limit_max": 1.0,
+    "wyaw_limit_min": -3.14,
+    "wyaw_limit_max": 3.14,
+    "cmd_smoothes": 0.0
 }
 ```
 
-## Running
+### Virtual Keyboard Speed Limits
 
-### Deploy on Mujoco Simulation
+Edit `virtual_keyboard/virtual_keyboard_publisher.py` and adjust the scale constants at the top:
 
-1. Install Unitree Mujoco following the instructions at https://github.com/unitreerobotics/unitree_mujoco
-
-2. Set the ONNX Runtime path in `CMakeLists.txt`:
-   ```cmake
-   set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-x64-1.22.0)
-   ```
-
-3. Configure the network interface in `controller/src/interface/IOSDK.cpp`:
-   ```cpp
-   ChannelFactory::Instance()->Init(1, "lo"); // lo for simulation
-   ```
-
-4. Build the project:
-   ```bash
-   cd build
-   cmake ..
-   make -j4
-   ```
-
-5. Edit unitree_mujoco/config.yaml and Start the simulation:
-    ```yaml
-    robot: "g1"  # Robot name, "go2", "b2", "b2w", "h1", "go2w", "g1"
-    robot_scene: "scene_29dof.xml" # Robot scene, /unitree_robots/[robot]/scene.xml 
-    domain_id: 1  # Domain id
-    interface: "lo" # Interface 
-    use_joystick: 1 # Simulate Unitree WirelessController using a gamepad
-    joystick_type: "xbox" # support "xbox" and "switch" gamepad layout
-    joystick_device: "/dev/input/js0" # Device path
-    joystick_bits: 16 # Some game controllers may only have 8-bit accuracy
-    print_scene_information: 1 # Print link, joint and sensors information of robot
-    enable_elastic_band: 1 # Virtual spring band, used for lifting h1
-    ```
-
-   ```bash
-   cd simulate/build
-   ./unitree_mujoco
-   ```
-
-6. Run the controller (in a new terminal):
-   ```bash
-   cd controller/build
-   ./wbc_fsm
-   ```
-
-### Deploy on Real Robot
-
-1. Copy this project to `/home/unitree` on the Unitree G1 robot's PC2 computer
-
-2. Set the ONNX Runtime path in `CMakeLists.txt`:
-   ```cmake
-   set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-aarch64-1.22.0)
-   ```
-
-3. Configure the network interface in `controller/src/interface/IOSDK.cpp`:
-   ```cpp
-   ChannelFactory::Instance()->Init(0, "eth0"); // eth0 for real robot
-   ```
-
-4. Build the project:
-   ```bash
-   cd build
-   cmake ..
-   make -j4
-   ```
-
-5. Run the controller:
-   ```bash
-   ./wbc_fsm
-   ```
-
-## Controls
-
-### Controller Commands
-
-- **R1**: Resume WBC state (when paused)
-- **R2**: Pause WBC state (at specified frame)
-- **L2**: Pause WBC state (at current frame)
-- **R2+A**: Switch to Loco mode
-- **L2+B**: Switch to Passive mode
-- **SELECT**: Exit program
-
-### Operation Procedure
-
-1. After starting the program, the robot enters **Damping Protection Mode**
-2. Press **START** to enter position control mode
-3. Suspend the robot (In simulation, `enable_elastic_band` is enabled by default. Press keyboard **9** to release the band, press again to re-suspend. Press **8** to lower, **7** to raise)
-4. Press **R2+A** on the controller to enter Loco(AMP) Mode, then release the suspension band
-   - Press **R2+up** to enter high speed mode(running)
-   - Press **R2+down** to enter low speed mode(walking)
-5. Press **R2+B** on the controller to enter Loco(RL) Mode
-6. Press **R1+Up** on the controller to enter WBC (Whole-Body Control) Mode
-   - Press **R2** to pause the motion
-   - Press **R1** to resume the motion
+```python
+LX_SCALE = 1.0   # strafe speed (A/D)
+LY_SCALE = 3.0   # forward/back speed (W/S)
+RX_SCALE = 1.0   # turn speed (Q/E)
+```
 
 ## Project Structure
 
 ```
-controller/
-├── config/           # Configuration files
-├── include/          # Header files
-│   ├── common/      # Common utilities
-│   ├── control/     # Control components
-│   ├── FSM/         # State machine states
-│   ├── interface/   # Hardware interfaces
-│   └── message/     # Message definitions
-├── src/             # Source files
+├── build.sh              # One-click build (auto-installs dependencies)
+├── start.sh              # Launch simulator + keyboard + controller (tmux)
+├── stop.sh               # Stop everything
+├── CMakeLists.txt        # Controller build config
+├── config/               # JSON configuration files
+├── include/              # Header files
+├── src/                  # Source files
 │   ├── main.cpp
 │   ├── control/
 │   ├── FSM/
 │   └── interface/
-├── model/           # ONNX models
-├── motion_data/     # Motion reference data
-└── CMakeLists.txt
+├── model/                # ONNX models
+│   ├── loco/             # Locomotion / AMP / MJAMP models
+│   └── wbc/              # WBC motion-tracking models
+├── unitree_mujoco/       # MuJoCo simulator framework
+├── virtual_keyboard/     # Virtual keyboard DDS publisher (uv-managed)
+│   ├── pyproject.toml    # Python project config (uv)
+│   └── run_g1_cpp_bridge.sh  # Manual per-component launcher
+└── .gitignore
 ```
 
 ## License
@@ -198,6 +131,7 @@ Modified and extended by [ccrpRepo / ZSTU Robotics] © 2026
 
 ## Acknowledgments
 
-- Based on Unitree Robotics SDK2
-- Motion data from LAFAN1 dataset
+- Based on [ccrpRepo/wbc_fsm](https://github.com/ccrpRepo/wbc_fsm) — the reference project this work is derived from
+- Unitree Robotics SDK2
+- LAFAN1 motion dataset
 - ONNX Runtime for model inference

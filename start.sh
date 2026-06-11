@@ -2,7 +2,6 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONDA_PYTHON="/home/wufy/miniconda3/envs/wbc_vkb/bin/python3"
 
 # Kill existing session if any
 tmux kill-session -t wbc 2>/dev/null || true
@@ -14,7 +13,7 @@ tmux new-session -d -s wbc -n sim \
 sleep 2
 
 tmux split-window -h -t wbc:sim \
-  "cd '$ROOT_DIR/virtual_keyboard' && PATH=/home/wufy/miniconda3/envs/wbc_vkb/bin:\$PATH DISPLAY=:1 $CONDA_PYTHON virtual_keyboard_publisher.py; read"
+  "cd '$ROOT_DIR/virtual_keyboard' && DISPLAY=:1 uv run python virtual_keyboard_publisher.py; read"
 
 sleep 2
 

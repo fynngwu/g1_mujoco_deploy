@@ -60,7 +60,8 @@ case "${cmd}" in
     exec ./wbc_fsm "$@"
     ;;
   vkb)
-    exec python3 "${SCRIPT_DIR}/virtual_keyboard_publisher.py" "$@"
+    cd "${SCRIPT_DIR}"
+    exec uv run python virtual_keyboard_publisher.py "$@"
     ;;
   check)
     check_bins
