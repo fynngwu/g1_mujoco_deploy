@@ -8,12 +8,12 @@ tmux kill-session -t wbc 2>/dev/null || true
 sleep 0.5
 
 tmux new-session -d -s wbc -n sim \
-  "cd '$ROOT_DIR/unitree_mujoco/simulate/build' && DISPLAY=:1 ./unitree_mujoco; read"
+  "cd '$ROOT_DIR/unitree_mujoco/simulate/build' && ./unitree_mujoco; read"
 
 sleep 2
 
 tmux split-window -h -t wbc:sim \
-  "cd '$ROOT_DIR/virtual_keyboard' && DISPLAY=:1 uv run python virtual_keyboard_publisher.py; read"
+  "cd '$ROOT_DIR/virtual_keyboard' && uv run python virtual_keyboard_publisher.py; read"
 
 sleep 2
 

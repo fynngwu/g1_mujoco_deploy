@@ -79,7 +79,7 @@ echo ""
 # ── Setup Python virtual env (uv) for virtual keyboard ──
 echo "=== Setting up virtual keyboard Python env ==="
 cd "${ROOT_DIR}/virtual_keyboard"
-uv sync --frozen 2>/dev/null || uv sync
+uv sync --python 3.10 --frozen 2>/dev/null || uv sync --python 3.10
 echo ""
 
 echo "Done. Binaries:"
